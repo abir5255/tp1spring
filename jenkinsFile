@@ -1,7 +1,7 @@
 pipeline {
     agent any 
     tools { 
-        maven 'maven'
+        maven "maven"
     }
     stages {
         stage ("Clean up") {
@@ -11,79 +11,25 @@ pipeline {
         }
         stage ("Clone repo") {
             steps {
-                script {
-                    if (isUnix()) {
                         sh "git clone https://github.com/abir5255/tp1spring.git"
-                    } else {
-                        bat "git clone https://github.com/abir5255/tp1spring.git"
-                    }
+                    } 
                 }
-            }
-        }
-        stage('Build') {
+        stage("Generate backend image") {
             steps {
                 dir("tp1spring") {
-                    script {
-                        if (isUnix()) {
                             sh "mvn clean install"
-                        } else {
-                            bat "mvn clean install"
+                            sh "docker build -t docexp-spring ."
                         }
                     }
                 }
-            }
-        }
-        stage('SonarQube Analysis') {
+
+        stage("Run docker compose") {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    dir("tp1spring") {
-                        script {
-                            if (isUnix()) {
-                                sh 'mvn sonar:sonar'
-                            } else {
-                                bat 'mvn sonar:sonar'
-                            }
+                    dir("tp1-spring") {
+                                sh "docker compose up -d"
                         }
                     }
                 }
             }
         }
-        stage("Publish to Nexus Repository Manager") {
-            steps {
-                dir("tp1spring") {
-                    script {
-                        pom = readMavenPom file: "pom.xml"
-                        filesByGlob = findFiles(glob: "target/*.${pom.packaging}")
-                        echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
-                        artifactPath = filesByGlob[0].path
-                        artifactExists = fileExists artifactPath
-                        if (artifactExists) {
-                            echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}"
-                            nexusArtifactUploader(
-                                nexusVersion: NEXUS_VERSION,
-                                protocol: NEXUS_PROTOCOL,
-                                nexusUrl: NEXUS_URL,
-                                groupId: pom.groupId,
-                                version: pom.version,
-                                repository: NEXUS_REPOSITORY,
-                                credentialsId: NEXUS_CREDENTIAL_ID,
-                                artifacts: [
-                                    [artifactId: pom.artifactId,
-                                     classifier: '',
-                                     file: artifactPath,
-                                     type: pom.packaging],
-                                    [artifactId: pom.artifactId,
-                                     classifier: '',
-                                     file: "pom.xml",
-                                     type: "pom"]
-                                ]
-                            )
-                        } else {
-                            error "*** File: ${artifactPath}, could not be found"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+      
