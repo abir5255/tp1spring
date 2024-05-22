@@ -22,12 +22,13 @@ pipeline {
                 }
             }
         }
-        stage("Run docker compose") {
-            steps {
-                dir("tp1spring") {
-                    bat "docker-compose up -d"
-                }
-            }
+      stage("Run docker compose") {
+    steps {
+        dir("tp1spring") {
+            bat "dir" // Vérifier les fichiers présents dans le répertoire
+            bat "docker-compose up -d"
         }
+    }
+}
     }
 }
