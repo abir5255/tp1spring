@@ -6,7 +6,7 @@ pipeline {
     environment {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "192.168.1.55:8081"
+        NEXUS_URL = "http://192.168.1.55:8081"
         NEXUS_REPOSITORY = "maven-nexus-repo"
         NEXUS_CREDENTIAL_ID = "nexus-user-credentials"
     }
@@ -23,15 +23,15 @@ pipeline {
         }
         stage('Build') {
             steps {
-                dir("exp1-spring"){
-                      sh "mvn clean install"
-                  }
+                dir("tp1spring"){
+                    sh "mvn clean install"
+                }
             }
         }
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    dir("exp1-spring"){
+                    dir("tp1spring"){
                         sh 'mvn sonar:sonar'
                     }
                 }
@@ -40,16 +40,12 @@ pipeline {
 
         stage("Publish to Nexus Repository Manager") {
             steps {
-                 dir("exp1-spring"){
-
-                     script {
+                dir("tp1spring"){
+                    script {
                         pom = readMavenPom file: "pom.xml";
                         filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
-                        echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
-                        artifactPath = filesByGlob[0].path;
-                        artifactExists = fileExists artifactPath;
-                        if(artifactExists) {
-                            echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}";
+                        if (!filesByGlob.empty) {
+                            artifactPath = filesByGlob[0].path;
                             nexusArtifactUploader(
                                 nexusVersion: NEXUS_VERSION,
                                 protocol: NEXUS_PROTOCOL,
@@ -70,13 +66,11 @@ pipeline {
                                 ]
                             );
                         } else {
-                        error "*** File: ${artifactPath}, could not be found";
+                            error "*** File not found for publishing to Nexus";
                         }
                     }    
                 }
             }
         }
-
-        
     }
 }
