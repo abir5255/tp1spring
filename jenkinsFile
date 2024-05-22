@@ -4,11 +4,7 @@ pipeline {
         maven 'maven' 
     }
     stages {
-        stage ("Clean up") {
-            steps {
-                deleteDir()
-            }
-        }
+       
         stage ("Clone repo") {
             steps {
                 bat "git clone https://github.com/abir5255/tp1spring.git"
