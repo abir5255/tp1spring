@@ -1,4 +1,4 @@
-pepeline{
+pepeline {
    agent any
    tools{
       maven 'maven'
